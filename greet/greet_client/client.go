@@ -23,6 +23,8 @@ func main() {
 	doUnary(c)
 	// do streaming server
 	doStreamingServer(c)
+	// do streaming client
+	doStreamingClient(c)
 
 	defer conn.Close() // when done, close connection
 
@@ -70,5 +72,65 @@ func doStreamingServer(c greetpb.GreetServiceClient) {
 			print(res.GetResult())
 		}
 	}
+
+}
+
+// streaming client
+func doStreamingClient(c greetpb.GreetServiceClient) {
+	print("-----running client streaming-----\n")
+	reqDatas := []*greetpb.LongGreetRequest{
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Jack",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Tom",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Lili",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Jill",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Mark",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.LongGreetRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Anni",
+				LastName:  "test last name",
+			},
+		},
+	}
+	stream, err := c.LongGreet(context.Background())
+	if err != nil {
+		log.Fatalln("Fail to call LongGreet.", err)
+	}
+	for _, reqData := range reqDatas {
+		err := stream.Send(reqData)
+		if err != nil {
+			log.Fatalln("Fail to send client stream.", err)
+		}
+	}
+	print("sending client stream done.")
+	res, err := stream.CloseAndRecv()
+	if err != nil {
+		log.Fatalln("Fail to receive server response.", err)
+	}
+	print(res.GetResult())
 
 }
