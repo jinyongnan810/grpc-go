@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
+	"time"
 
 	"github.com/jinyongnan810/grpc-go/greet/greetpb"
 
@@ -13,6 +15,7 @@ import (
 
 type server struct{}
 
+// unary
 func (*server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.GreetResponse, error) {
 	firstName := req.GetGreeting().GetFirstName()
 	result := "hello, " + firstName
@@ -20,6 +23,23 @@ func (*server) Greet(ctx context.Context, req *greetpb.GreetRequest) (*greetpb.G
 		Result: result,
 	}
 	return &res, nil
+}
+
+// streaming server
+func (*server) GreetedManyTimes(req *greetpb.GreetManyTimesRequest, stream greetpb.GreetService_GreetedManyTimesServer) error {
+	first := req.GetGreeting().GetFirstName()
+	for i := 0; i < 10; i++ {
+		result := "hello, " + first + ". No." + strconv.Itoa(i) + "\n"
+		res := greetpb.GreetManyTimesResponse{
+			Result: result,
+		}
+		err := stream.Send(&res)
+		if err != nil {
+			log.Fatal("Fail to send stream.", err)
+		}
+		time.Sleep(time.Millisecond * 200)
+	}
+	return nil
 }
 
 func main() {

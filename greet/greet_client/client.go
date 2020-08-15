@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 
 	"github.com/jinyongnan810/grpc-go/greet/greetpb"
@@ -20,6 +21,8 @@ func main() {
 	fmt.Println("Client created.", c)
 	// do unary
 	doUnary(c)
+	// do streaming server
+	doStreamingServer(c)
 
 	defer conn.Close() // when done, close connection
 
@@ -27,6 +30,7 @@ func main() {
 
 // unary req/res
 func doUnary(c greetpb.GreetServiceClient) {
+	print("-----running unary-----\n")
 	// send request
 	greeting := greetpb.Greeting{
 		FirstName: "test first name",
@@ -40,4 +44,31 @@ func doUnary(c greetpb.GreetServiceClient) {
 		log.Fatalln("Fail to envoke Greet.", err)
 	}
 	fmt.Println("Response is :", res.GetResult())
+}
+
+// client of streaming server
+func doStreamingServer(c greetpb.GreetServiceClient) {
+	print("-----running server streaming-----\n")
+	greeting := greetpb.Greeting{
+		FirstName: "test first name",
+		LastName:  "test last name",
+	}
+	req := greetpb.GreetManyTimesRequest{
+		Greeting: &greeting,
+	}
+	client, err := c.GreetedManyTimes(context.Background(), &req)
+	if err != nil {
+		log.Fatalln("Fail to envoke GreetedManyTimes.", err)
+	}
+	for {
+		res, err := client.Recv()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatalln("Fail to receive stream.", err)
+		} else {
+			print(res.GetResult())
+		}
+	}
+
 }
