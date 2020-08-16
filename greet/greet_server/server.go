@@ -47,7 +47,6 @@ func (*server) GreetedManyTimes(req *greetpb.GreetManyTimesRequest, stream greet
 func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 	result := ""
 	for {
-		print("hello")
 		req, err := stream.Recv()
 		if err == io.EOF {
 			return stream.SendAndClose(&greetpb.LongGreetResponse{
@@ -60,6 +59,49 @@ func (*server) LongGreet(stream greetpb.GreetService_LongGreetServer) error {
 			result += "Hello, " + req.GetGreeting().GetFirstName() + "!"
 		}
 	}
+	return nil
+}
+
+// bi direction streaming server
+func (*server) GreetEveryone(stream greetpb.GreetService_GreetEveryoneServer) error {
+	waitc := make(chan int, 2)
+	// recv
+	go func() {
+		for {
+			req, err := stream.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatal("Fail to receive client stream.", err)
+				break
+			}
+			println("server received client stream:", req.GetGreeting().GetFirstName())
+		}
+		waitc <- 1
+	}()
+	// send
+	go func() {
+		for i := 0; i < 5; i++ {
+			err := stream.Send(&greetpb.GreetEveryoneResponse{
+				Result: "server sends hello, No." + strconv.Itoa(i),
+			})
+			if err != nil {
+				log.Fatal("Fail to send server stream.", err)
+				break
+			}
+			time.Sleep(1 * time.Second)
+		}
+		waitc <- 2
+
+	}()
+
+	// block
+	for i := 0; i < 2; i++ {
+		<-waitc
+	}
+	close(waitc)
+	println("done bi streaming.")
 	return nil
 }
 

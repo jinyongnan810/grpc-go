@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"github.com/jinyongnan810/grpc-go/greet/greetpb"
 
@@ -25,6 +26,8 @@ func main() {
 	doStreamingServer(c)
 	// do streaming client
 	doStreamingClient(c)
+	// do bi directional streaming
+	doBiStreamingClient(c)
 
 	defer conn.Close() // when done, close connection
 
@@ -133,4 +136,87 @@ func doStreamingClient(c greetpb.GreetServiceClient) {
 	}
 	print(res.GetResult())
 
+}
+
+// bi direction streaming client
+func doBiStreamingClient(c greetpb.GreetServiceClient) {
+	println("-----running bi directional streaming client-----")
+	reqDatas := []*greetpb.GreetEveryoneRequest{
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Jack",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Tom",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Lili",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Jill",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Mark",
+				LastName:  "test last name",
+			},
+		},
+		&greetpb.GreetEveryoneRequest{
+			Greeting: &greetpb.Greeting{
+				FirstName: "Anni",
+				LastName:  "test last name",
+			},
+		},
+	}
+	stream, err := c.GreetEveryone(context.Background())
+	if err != nil {
+		log.Fatalln("Fail to call GreetEveryone.", err)
+	}
+	waitc := make(chan int, 2)
+	// recv
+	go func() {
+		for {
+			res, err := stream.Recv()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatal("Fail to receive server stream.", err)
+				break
+			}
+			println("client received server stream:", res.GetResult())
+		}
+		waitc <- 1
+	}()
+	// send
+	go func() {
+		for _, reqData := range reqDatas {
+			err := stream.Send(reqData)
+			if err != nil {
+				log.Fatalln("Fail to send client stream.", err)
+				break
+			}
+			println("client sent:", reqData.GetGreeting().GetFirstName())
+			time.Sleep(2 * time.Second)
+		}
+		stream.CloseSend()
+		waitc <- 2
+	}()
+	// block
+	for i := 0; i < 2; i++ {
+		<-waitc
+	}
+	close(waitc)
+	print("done bi streaming.")
 }
