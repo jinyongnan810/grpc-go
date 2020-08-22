@@ -1,0 +1,27 @@
+syntax = "proto3";
+package calculator;
+option go_package = ".;calpb";
+
+message UnaryRequest {
+  int32 first = 1;
+  int32 second = 2;
+}
+message UnaryResponse { int32 result = 1; }
+
+message ServerStreamRequest { int32 number = 1; }
+message ServerStreamResponse { int32 decomposition = 1; }
+
+message ClientStreamRequest { int32 number = 1; }
+message ClientStreamResponse { float average = 1; }
+
+message BiStreamRequest { int32 number = 1; }
+message BiStreamResponse { int32 max = 1; }
+service CalculatorService {
+  rpc UnarySum(UnaryRequest) returns (UnaryResponse) {}
+  rpc ServerStreamDecomposite(ServerStreamRequest)
+      returns (stream ServerStreamResponse) {}
+  rpc CLientStreamAverage(stream ClientStreamRequest)
+      returns (ClientStreamResponse) {}
+  rpc BiStreamFindMax(stream BiStreamRequest)
+      returns (stream BiStreamResponse) {}
+}
