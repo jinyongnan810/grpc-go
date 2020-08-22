@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"google.golang.org/grpc/status"
+
 	"github.com/jinyongnan810/grpc-go/calculator/calpb"
 
 	"google.golang.org/grpc"
@@ -28,6 +30,10 @@ func main() {
 	runClientStream(c)
 	// running bi stream
 	runBiStream(c)
+
+	// running square root
+	runSquareRoot(c, 7)
+	runSquareRoot(c, -1)
 }
 
 func runUnary(c calpb.CalculatorServiceClient) {
@@ -131,4 +137,23 @@ func runBiStream(c calpb.CalculatorServiceClient) {
 		<-waitc
 	}
 	println("bi streaming done.")
+}
+func runSquareRoot(c calpb.CalculatorServiceClient, num int32) {
+	fmt.Printf("-----running square root %v -----\n", num)
+	req := &calpb.SquareRootRequest{
+		Number: num,
+	}
+	res, err := c.SquareRoot(context.Background(), req)
+	if err != nil {
+		fmt.Println("Fail to call SquareRoot.", err)
+		errDetail, ok := status.FromError(err)
+		if ok {
+			fmt.Println("User error message:", errDetail.Message())
+			fmt.Printf("User error code:%v\n", errDetail.Code())
+		} else {
+			log.Fatalln("Fatal error", err)
+		}
+		return
+	}
+	println("Square root is:", fmt.Sprint((res.GetRoot())))
 }

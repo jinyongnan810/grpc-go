@@ -5,7 +5,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
+
+	"google.golang.org/grpc/codes"
+
+	"google.golang.org/grpc/status"
 
 	"github.com/jinyongnan810/grpc-go/calculator/calpb"
 
@@ -117,6 +122,16 @@ func (*server) BiStreamFindMax(stream calpb.CalculatorService_BiStreamFindMaxSer
 	}()
 	<-waitc
 	return nil
+}
+
+func (*server) SquareRoot(c context.Context, req *calpb.SquareRootRequest) (*calpb.SquareRootResponse, error) {
+	num := req.GetNumber()
+	if num <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Received nagative number:%v", num))
+	}
+	return &calpb.SquareRootResponse{
+		Root: math.Sqrt(float64(num)),
+	}, nil
 }
 
 func main() {

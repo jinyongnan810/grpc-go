@@ -16,6 +16,10 @@ message ClientStreamResponse { float average = 1; }
 
 message BiStreamRequest { int32 number = 1; }
 message BiStreamResponse { int32 max = 1; }
+
+message SquareRootRequest { int32 number = 1; }
+message SquareRootResponse { double root = 1; }
+
 service CalculatorService {
   rpc UnarySum(UnaryRequest) returns (UnaryResponse) {}
   rpc ServerStreamDecomposite(ServerStreamRequest)
@@ -24,4 +28,7 @@ service CalculatorService {
       returns (ClientStreamResponse) {}
   rpc BiStreamFindMax(stream BiStreamRequest)
       returns (stream BiStreamResponse) {}
+
+  // returns Code_INVALID_ARGUMENT when receive negative number
+  rpc SquareRoot(SquareRootRequest) returns (SquareRootResponse) {}
 }
