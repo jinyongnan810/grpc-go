@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"net"
+	"time"
 
 	"google.golang.org/grpc/codes"
 
@@ -130,6 +131,24 @@ func (*server) SquareRoot(c context.Context, req *calpb.SquareRootRequest) (*cal
 		return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Received nagative number:%v", num))
 	}
 	return &calpb.SquareRootResponse{
+		Root: math.Sqrt(float64(num)),
+	}, nil
+}
+func (*server) SquareRootWithDeadline(c context.Context, req *calpb.WithDeadlineRequest) (*calpb.WithDeadlineResponse, error) {
+	num := req.GetNumber()
+	// sleep for 3 seconds, and check client cancel every second
+	for i := 0; i < 3; i++ {
+		time.Sleep(time.Second * 1)
+		if c.Err() == context.Canceled {
+			println("Client canceled the request.")
+			return nil, status.Errorf(codes.Canceled, "client cancelled.")
+		}
+	}
+
+	if num <= 0 {
+		return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("Received nagative number:%v", num))
+	}
+	return &calpb.WithDeadlineResponse{
 		Root: math.Sqrt(float64(num)),
 	}, nil
 }

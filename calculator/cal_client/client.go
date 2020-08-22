@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"google.golang.org/grpc/codes"
+
 	"google.golang.org/grpc/status"
 
 	"github.com/jinyongnan810/grpc-go/calculator/calpb"
@@ -34,6 +36,9 @@ func main() {
 	// running square root
 	runSquareRoot(c, 7)
 	runSquareRoot(c, -1)
+	// running square root with deadline
+	runSquareRootWithDeadline(c, 7, 5)
+	runSquareRootWithDeadline(c, 7, 1)
 }
 
 func runUnary(c calpb.CalculatorServiceClient) {
@@ -148,8 +153,36 @@ func runSquareRoot(c calpb.CalculatorServiceClient, num int32) {
 		fmt.Println("Fail to call SquareRoot.", err)
 		errDetail, ok := status.FromError(err)
 		if ok {
-			fmt.Println("User error message:", errDetail.Message())
-			fmt.Printf("User error code:%v\n", errDetail.Code())
+			fmt.Println("gRPC error message:", errDetail.Message())
+			fmt.Printf("gRPC error code:%v\n", errDetail.Code())
+		} else {
+			log.Fatalln("Fatal error", err)
+		}
+		return
+	}
+	println("Square root is:", fmt.Sprint((res.GetRoot())))
+}
+
+func runSquareRootWithDeadline(c calpb.CalculatorServiceClient, num int32, seconds int) {
+	fmt.Printf("-----running square root with deadline num:%v,seconds:%v -----\n", num, seconds)
+	req := &calpb.WithDeadlineRequest{
+		Number: num,
+	}
+	// create context with deadline
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(seconds))
+	// defer cancel
+	defer cancel()
+
+	res, err := c.SquareRootWithDeadline(ctx, req)
+	if err != nil {
+		fmt.Println("Fail to call SquareRootWithDeadline.", err)
+		errDetail, ok := status.FromError(err)
+		if ok {
+			if errDetail.Code() == codes.DeadlineExceeded {
+				fmt.Println("Server cancelled due to deadline.")
+			}
+			fmt.Println("gRPC error message:", errDetail.Message())
+			fmt.Printf("gRPC error code:%v\n", errDetail.Code())
 		} else {
 			log.Fatalln("Fatal error", err)
 		}

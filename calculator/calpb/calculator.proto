@@ -20,6 +20,9 @@ message BiStreamResponse { int32 max = 1; }
 message SquareRootRequest { int32 number = 1; }
 message SquareRootResponse { double root = 1; }
 
+message WithDeadlineRequest { int32 number = 1; }
+message WithDeadlineResponse { double root = 1; }
+
 service CalculatorService {
   rpc UnarySum(UnaryRequest) returns (UnaryResponse) {}
   rpc ServerStreamDecomposite(ServerStreamRequest)
@@ -31,4 +34,8 @@ service CalculatorService {
 
   // returns Code_INVALID_ARGUMENT when receive negative number
   rpc SquareRoot(SquareRootRequest) returns (SquareRootResponse) {}
+
+  // grpc calls with deadline
+  rpc SquareRootWithDeadline(WithDeadlineRequest)
+      returns (WithDeadlineResponse) {}
 }

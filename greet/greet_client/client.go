@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"google.golang.org/grpc/credentials"
+
 	"github.com/jinyongnan810/grpc-go/greet/greetpb"
 
 	"google.golang.org/grpc"
@@ -14,7 +16,20 @@ import (
 
 func main() {
 	fmt.Println("hello grpc client")
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	tls := false //currently not working
+
+	opts := grpc.WithInsecure()
+
+	if tls {
+		certFile := "ssl/ca.crt" // Certificate Authority Trust certificate
+		creds, sslErr := credentials.NewClientTLSFromFile(certFile, "")
+		if sslErr != nil {
+			log.Fatalf("Error while loading CA trust certificate: %v", sslErr)
+			return
+		}
+		opts = grpc.WithTransportCredentials(creds)
+	}
+	conn, err := grpc.Dial("localhost:50051", opts)
 	if err != nil {
 		log.Fatalln("Fail to dail.", err)
 	}
