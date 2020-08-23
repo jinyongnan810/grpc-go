@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/grpc/reflection"
+
 	"google.golang.org/grpc/credentials"
 
 	"github.com/jinyongnan810/grpc-go/greet/greetpb"
@@ -128,6 +130,8 @@ func main() {
 	}
 	s := grpc.NewServer(opts...)
 	greetpb.RegisterGreetServiceServer(s, &server{})
+	// register grpc reflection for cli
+	reflection.Register(s)
 	if err := s.Serve(lis); err != nil {
 		log.Fatal("Fail to serve.", err)
 	}
